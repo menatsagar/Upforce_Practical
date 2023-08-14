@@ -13,7 +13,7 @@ from typing import Union
 
 class ActivityTracking(models.Model):
     created_at = models.DateTimeField(editable=False, null=True, blank=True)
-    updated_at = models.DateTimeField()
+    updated_at = models.DateTimeField(null=True, blank=True)
     is_active   = models.BooleanField(default=True)
     class Meta:
         abstract = True
@@ -45,20 +45,11 @@ class User(ActivityTracking):
 class Post(ActivityTracking):
     """This model stores the data into Post table in db"""
 
-    post_type_choices = [
-        ("PRIVATE", "PRIVATE"),
-        ("PUBLIC", "PUBLIC"),
-    ]
-
-  
     title = models.CharField(max_length=50)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_all_posts")
     description  = models.TextField()
     content  = models.TextField(null=True, blank=True)
-    post_type = models.CharField(
-        max_length=7,
-        choices=post_type_choices,
-        default="PUBLIC")
+    is_public = models.BooleanField(default=True)
 
 
     def __str__(self):
