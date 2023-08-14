@@ -98,20 +98,31 @@ class PostAPIView(APIView):
      
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def put(self, request,id):
-        post = self.get_object(id)
-        serializer = PostUpdateSerializer(post,data = request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message':'Post has been Updated Successfully'}, status=status.HTTP_202_ACCEPTED)
-       
-        return Response(serializer.errors,status = status.HTTP_304_NOT_MODIFIED)            
-
-    def delete(self,request,id):
+    def put(self, request,post_id, user_id):
+        post = self.get_object(post_id)
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist as e :
+            return Response(e, status=status.HTTP_400_BAD_REQUEST)
+        if post.owner == user:
+            serializer = PostUpdateSerializer(post,data = request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message':'Post has been Updated Successfully'}, status=status.HTTP_202_ACCEPTED)
+        
+            return Response(serializer.errors,status = status.HTTP_304_NOT_MODIFIED)            
+        return Response({'message':'You can not update others post'}, status=status.HTTP_200_OK)
+        
+    def delete(self, request,post_id, user_id):
         try:
             post = self.get_object(id)
-            post.delete()
-            return Response({'message':'Post has been Deleted Successfully'},status = status.HTTP_200_OK)
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist as e :
+                return Response(e, status=status.HTTP_400_BAD_REQUEST)
+            if post.owner == user:
+                post.delete()
+                return Response({'message':'Post has been Deleted Successfully'},status = status.HTTP_200_OK)
         except Post.DoesNotExist as e :
             return Response(e, status=status.HTTP_200_OK)
 
@@ -163,8 +174,18 @@ class LikeAPIView(APIView):
 class GetPostsListAPI(APIView):
 
        
-    def get(self,request):
-       
-        post_list = Post.objects.all()
+    def get(self,request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist as e:
+            user = None
+
+        public_post_list  = Post.objects.filter(is_public=True)
+        if user:
+            user_private_posts = Post.objects.filter(is_public=False, owner=user) 
+            post_list = public_post_list | user_private_posts
+        else:
+
+            post_list = public_post_list
         serializer = PostSerializer(post_list, many = True)
         return Response(serializer.data, status=status.HTTP_200_OK)

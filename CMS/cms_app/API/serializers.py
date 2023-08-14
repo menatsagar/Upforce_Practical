@@ -113,6 +113,6 @@ class LikeCreateSerializer(serializers.ModelSerializer):
 class LikeUpdateSerializer(serializers.ModelSerializer):
         
         class Meta:
-            model=Like
-            fields = ['title','description','content', 'is_public']  
+            model = Like    
+            fields = ['user', 'post']  
 
